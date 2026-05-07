@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Planets
+from models import db, User, Planets, Favorites
 #from models import Person
 
 app = Flask(__name__)
@@ -136,6 +136,37 @@ def create_user():
          #en caso de error se captura la excepcion
         print(f"Error al crear usuario: {error}")
         return jsonify({"msg": "Internal Server Error", "error": str(error)}), 500
+
+# ///////////////////////////////////////////////////////////////////////////// agregar un planeta como  favorito a un usuario 
+
+@app.route('/users/<int:user_id>/favorite/planet/<int:planet_id>', methods=['POST'])
+def create_planet_fav(user_id, planet_id ):
+
+    user= User.query.get(user_id)
+    if not user:
+        return jsonify({"msg": "no se encontro el usuario"}), 400
+
+    planet= Planets.query.get(planet_id)
+    if not planet:
+        return jsonify({"msg": "no se encontro el planeta"}), 400
+
+    #verificamos si ya existe un registro de favoritos con esos datos
+    exists= Favorites.query.filter_by(
+        id_user=user_id,
+        id_planet=planet_id
+    ).first()
+    if exists:
+        return jsonify({"msg": "El planeta ya esta en favoritos "}), 400
+
+
+    fav= Favorites(id_user= user_id, id_planet=planet_id)
+
+    db.session.add(fav)
+    db.session.commit()
+
+    return jsonify({"msg": "El planeta se agrego a favoritos"}), 201
+    
+   
 
 
 #////////////////////////////////////////////////////////////////////////////
